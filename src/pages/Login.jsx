@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, Utensils, AlertCircle } from 'lucide-react';
@@ -10,12 +9,13 @@ import { validateLoginForm, isFormValid } from '../utils/validators';
 import { ROLES, ROUTES, COLLECTIONS } from '../utils/constants';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
+import GoogleButton from '../components/auth/GoogleButton'; // NEW
 
 const Login = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [errors, setErrors]         = useState({});
-  const [submitError, setSubmitError] = useState('');
-  const [loading, setLoading]         = useState(false);
+  const [formData, setFormData]         = useState({ email: '', password: '' });
+  const [errors, setErrors]             = useState({});
+  const [submitError, setSubmitError]   = useState('');
+  const [loading, setLoading]           = useState(false);
 
   const { currentUser, role } = useAuth();
   const navigate  = useNavigate();
@@ -25,7 +25,7 @@ const Login = () => {
   useEffect(() => {
     emailRef.current?.focus();
   }, []);
-  
+
   useEffect(() => {
     if (currentUser && role) {
       const destination =
@@ -39,8 +39,8 @@ const Login = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name])   setErrors((prev) => ({ ...prev, [name]: '' }));
-    if (submitError)    setSubmitError('');
+    if (errors[name])  setErrors((prev) => ({ ...prev, [name]: '' }));
+    if (submitError)   setSubmitError('');
   };
 
   const handleSubmit = async (e) => {
@@ -56,28 +56,24 @@ const Login = () => {
     setSubmitError('');
 
     try {
-      const firebaseUser = await loginUser(formData);     
-      const userDocRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
-      const userSnap   = await getDoc(userDocRef);
+      const firebaseUser = await loginUser(formData);
+      const userDocRef   = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
+      const userSnap     = await getDoc(userDocRef);
 
       if (!userSnap.exists()) {
-        
-        setSubmitError(
-          'Account setup is incomplete. Please sign up again or contact support.'
-        );
+        setSubmitError('Account setup is incomplete. Please sign up again or contact support.');
         setLoading(false);
         return;
       }
 
-      const profile = userSnap.data();     
-      const from = location.state?.from?.pathname;
-
+      const profile   = userSnap.data();
+      const from      = location.state?.from?.pathname;
       const dashboard =
         profile.role === ROLES.RESTAURANT
           ? ROUTES.RESTAURANT_DASHBOARD
-          : ROUTES.NGO_DASHBOARD;     
-      navigate(from || dashboard, { replace: true });
+          : ROUTES.NGO_DASHBOARD;
 
+      navigate(from || dashboard, { replace: true });
     } catch (error) {
       setSubmitError(getFriendlyAuthError(error));
     } finally {
@@ -101,6 +97,22 @@ const Login = () => {
             </p>
           </div>
 
+          {/* ── NEW: Google Button ── */}
+          <GoogleButton label="Sign in with Google" />
+
+          {/* ── NEW: OR Divider ── */}
+          {/* WHY THIS PATTERN: A horizontal rule with centred text is the
+              standard UX pattern for separating two auth methods. Using
+              flex + flex-1 hr elements on each side is the cleanest
+              Tailwind approach — no absolute positioning needed. */}
+          <div className="flex items-center gap-3 my-5">
+            <hr className="flex-1 border-slate-200" />
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+              or
+            </span>
+            <hr className="flex-1 border-slate-200" />
+          </div>
+
           {/* Submit error */}
           {submitError && (
             <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
@@ -109,6 +121,7 @@ const Login = () => {
             </div>
           )}
 
+          {/* Email/Password form — UNCHANGED */}
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
             <Input
               ref={emailRef}
@@ -123,7 +136,6 @@ const Login = () => {
               required
               autoComplete="email"
             />
-
             <Input
               label="Password"
               name="password"
@@ -136,24 +148,14 @@ const Login = () => {
               required
               autoComplete="current-password"
             />
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              fullWidth
-              loading={loading}
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
+            <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
+              {loading ? 'Signing in...' : 'Sign in with email'}
             </Button>
           </form>
 
           <p className="text-center text-sm text-slate-500 mt-6">
             Don't have an account?{' '}
-            <Link
-              to={ROUTES.SIGNUP}
-              className="text-emerald-600 font-semibold hover:text-emerald-700"
-            >
+            <Link to={ROUTES.SIGNUP} className="text-emerald-600 font-semibold hover:text-emerald-700">
               Sign up free
             </Link>
           </p>

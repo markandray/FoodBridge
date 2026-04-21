@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'; // Added useSearchParams
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Utensils, Users, Mail, Lock, Phone,
-  MapPin, User, AlertCircle, CheckCircle
+  Utensils, Mail, Lock, Phone,
+  MapPin, User, AlertCircle
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import { signupUser, getFriendlyAuthError } from '../services/auth.service';
@@ -10,85 +10,28 @@ import { validateSignupForm, isFormValid } from '../utils/validators';
 import { ROLES, ROUTES, CITIES } from '../utils/constants';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
-
-const RoleCard = ({ role, selected, onSelect }) => {
-  const config = {
-    [ROLES.RESTAURANT]: {
-      icon: Utensils,
-      title: 'Restaurant',
-      description: 'I have surplus food to donate',
-      color: selected
-        ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-300'
-        : 'border-slate-200 hover:border-orange-300 hover:bg-orange-50/50',
-      iconBg: 'bg-orange-100',
-      iconColor: 'text-orange-600',
-    },
-    [ROLES.NGO]: {
-      icon: Users,
-      title: 'NGO',
-      description: 'I collect and distribute food',
-      color: selected
-        ? 'border-blue-400 bg-blue-50 ring-2 ring-blue-300'
-        : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50/50',
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600',
-    },
-  };
-
-  const { icon: Icon, title, description, color, iconBg, iconColor } = config[role];
-
-  return (
-    <button
-      type="button" 
-      onClick={() => onSelect(role)}
-      className={`relative flex flex-col items-center gap-3 p-5 rounded-xl border-2 transition-all cursor-pointer text-center w-full ${color}`}
-    >
-      {selected && (
-        <div className="absolute top-2 right-2">
-          <CheckCircle className="h-5 w-5 text-emerald-500" />
-        </div>
-      )}
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${iconBg}`}>
-        <Icon className={`h-6 w-6 ${iconColor}`} />
-      </div>
-      <div>
-        <p className="font-semibold text-slate-800">{title}</p>
-        <p className="text-xs text-slate-500 mt-0.5">{description}</p>
-      </div>
-    </button>
-  );
-};
+import RoleCard from '../components/auth/RoleCard';       // MOVED from local definition
+import GoogleButton from '../components/auth/GoogleButton'; // NEW
 
 const Signup = () => {
-  const [searchParams] = useSearchParams(); // Initialize search params
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-    city: '',
-    role: '',
+    name: '', email: '', password: '',
+    phone: '', city: '', role: '',
   });
-
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors]           = useState({});
   const [submitError, setSubmitError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]         = useState(false);
 
   const { currentUser, role } = useAuth();
   const navigate = useNavigate();
-  const nameRef = useRef(null);
+  const nameRef  = useRef(null);
 
-  /**
-   * LOGIC IMPLEMENTATION: Role Detection
-   * This effect reads the ?role=... parameter from the URL 
-   * and automatically updates the form state.
-   */
   useEffect(() => {
     const roleParam = searchParams.get('role');
     if (roleParam === 'restaurant' || roleParam === 'ngo') {
-      // Use ROLES constant to ensure data integrity
       const selectedRole = roleParam === 'restaurant' ? ROLES.RESTAURANT : ROLES.NGO;
-      setFormData(prev => ({ ...prev, role: selectedRole }));
+      setFormData((prev) => ({ ...prev, role: selectedRole }));
     }
   }, [searchParams]);
 
@@ -109,10 +52,10 @@ const Signup = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
-    if (submitError) setSubmitError('');
+    if (errors[name])  setErrors((prev) => ({ ...prev, [name]: '' }));
+    if (submitError)   setSubmitError('');
   };
-  
+
   const handleRoleSelect = (selectedRole) => {
     setFormData((prev) => ({ ...prev, role: selectedRole }));
     if (errors.role) setErrors((prev) => ({ ...prev, role: '' }));
@@ -133,12 +76,11 @@ const Signup = () => {
 
     try {
       await signupUser(formData);
-      const destination = formData.role === ROLES.RESTAURANT 
-        ? ROUTES.RESTAURANT_DASHBOARD 
-        : ROUTES.NGO_DASHBOARD;
-        
+      const destination =
+        formData.role === ROLES.RESTAURANT
+          ? ROUTES.RESTAURANT_DASHBOARD
+          : ROUTES.NGO_DASHBOARD;
       navigate(destination, { replace: true });
-      
     } catch (error) {
       setSubmitError(getFriendlyAuthError(error));
     } finally {
@@ -164,6 +106,18 @@ const Signup = () => {
             </p>
           </div>
 
+          {/* ── NEW: Google Button ── */}
+          <GoogleButton label="Sign up with Google" />
+
+          {/* ── NEW: OR Divider ── */}
+          <div className="flex items-center gap-3 my-5">
+            <hr className="flex-1 border-slate-200" />
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+              or sign up with email
+            </span>
+            <hr className="flex-1 border-slate-200" />
+          </div>
+
           {submitError && (
             <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
               <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -171,6 +125,7 @@ const Signup = () => {
             </div>
           )}
 
+          {/* Email/Password form — UNCHANGED */}
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
             <div>
               <p className="text-sm font-medium text-slate-700 mb-3">
@@ -199,7 +154,6 @@ const Signup = () => {
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
                 Your Details
               </p>
-
               <div className="space-y-4">
                 <Input
                   ref={nameRef}
@@ -216,7 +170,6 @@ const Signup = () => {
                   icon={User}
                   required
                 />
-
                 <Input
                   label="Email address"
                   name="email"
@@ -229,7 +182,6 @@ const Signup = () => {
                   required
                   autoComplete="email"
                 />
-
                 <Input
                   label="Password"
                   name="password"
@@ -243,7 +195,6 @@ const Signup = () => {
                   autoComplete="new-password"
                   hint="At least 6 characters"
                 />
-
                 <Input
                   label="Phone number"
                   name="phone"
@@ -255,7 +206,6 @@ const Signup = () => {
                   icon={Phone}
                   required
                 />
-
                 <div className="flex flex-col gap-1">
                   <label htmlFor="city" className="text-sm font-medium text-slate-700">
                     City <span className="text-red-500">*</span>
@@ -290,23 +240,14 @@ const Signup = () => {
               </div>
             </div>
 
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              fullWidth
-              loading={loading}
-            >
+            <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
               {loading ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
 
           <p className="text-center text-sm text-slate-500 mt-6">
             Already have an account?{' '}
-            <Link
-              to={ROUTES.LOGIN}
-              className="text-emerald-600 font-semibold hover:text-emerald-700"
-            >
+            <Link to={ROUTES.LOGIN} className="text-emerald-600 font-semibold hover:text-emerald-700">
               Sign in
             </Link>
           </p>

@@ -1,42 +1,37 @@
-
 import { lazy, Suspense } from 'react';
 import {
   createBrowserRouter,
   RouterProvider,
   Outlet,
 } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { ToastProvider } from './context/ToastContext';
-import ProtectedRoute from './components/layout/ProtectedRoute';
-import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
-import Spinner from './components/common/Spinner';
-import ErrorBoundary from './components/common/ErrorBoundary';
-import useScrollRestoration from './hooks/useScrollRestoration';
-import { ROLES, ROUTES } from './utils/constants';
+import { AuthProvider }          from './context/AuthContext';
+import { ToastProvider }         from './context/ToastContext';
+import ProtectedRoute, { CompleteProfileRoute } from './components/layout/ProtectedRoute'; // UPDATED import
+import Navbar                    from './components/layout/Navbar';
+import Footer                    from './components/layout/Footer';
+import Spinner                   from './components/common/Spinner';
+import ErrorBoundary             from './components/common/ErrorBoundary';
+import useScrollRestoration      from './hooks/useScrollRestoration';
+import { ROLES, ROUTES }         from './utils/constants';
 
-const Landing        = lazy(() => import('./pages/Landing'));
-const Login          = lazy(() => import('./pages/Login'));
-const Signup         = lazy(() => import('./pages/Signup'));
-const NotFound       = lazy(() => import('./pages/NotFound'));
+const Landing             = lazy(() => import('./pages/Landing'));
+const Login               = lazy(() => import('./pages/Login'));
+const Signup              = lazy(() => import('./pages/Signup'));
+const NotFound            = lazy(() => import('./pages/NotFound'));
+const CompleteProfile     = lazy(() => import('./pages/CompleteProfile')); // NEW
 
-const RestaurantDashboard  = lazy(() => import('./pages/restaurant/Dashboard'));
-const PostFood             = lazy(() => import('./pages/restaurant/PostFood'));
-const ManageListings       = lazy(() => import('./pages/restaurant/ManageListings'));
-const DonationHistory      = lazy(() => import('./pages/restaurant/DonationHistory'));
+const RestaurantDashboard = lazy(() => import('./pages/restaurant/Dashboard'));
+const PostFood            = lazy(() => import('./pages/restaurant/PostFood'));
+const ManageListings      = lazy(() => import('./pages/restaurant/ManageListings'));
+const DonationHistory     = lazy(() => import('./pages/restaurant/DonationHistory'));
 
-const NgoDashboard         = lazy(() => import('./pages/ngo/Dashboard'));
-const BrowseListings       = lazy(() => import('./pages/ngo/BrowseListings'));
-const ClaimedPickups       = lazy(() => import('./pages/ngo/ClaimedPickups'));
-const PickupHistory        = lazy(() => import('./pages/ngo/PickupHistory'));
+const NgoDashboard        = lazy(() => import('./pages/ngo/Dashboard'));
+const BrowseListings      = lazy(() => import('./pages/ngo/BrowseListings'));
+const ClaimedPickups      = lazy(() => import('./pages/ngo/ClaimedPickups'));
+const PickupHistory       = lazy(() => import('./pages/ngo/PickupHistory'));
 
+const ScrollRestorer = () => { useScrollRestoration(); return null; };
 
-const ScrollRestorer = () => {
-  useScrollRestoration();
-  return null; 
-};
-
-// --- Page loading fallback ---
 const PageLoadingFallback = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
     <div className="flex flex-col items-center gap-3">
@@ -46,12 +41,10 @@ const PageLoadingFallback = () => (
   </div>
 );
 
-
 const AppLayout = () => (
   <div className="min-h-screen flex flex-col bg-slate-50">
     <ScrollRestorer />
     <Navbar />
-    {/* REACT CONCEPT: Suspense — fallback shown while lazy page loads */}
     <main className="flex-1">
       <Suspense fallback={<PageLoadingFallback />}>
         <Outlet />
@@ -61,23 +54,28 @@ const AppLayout = () => (
   </div>
 );
 
-// --- Route configuration ---
 const router = createBrowserRouter([
   {
     element: <AppLayout />,
-    // ErrorBoundary at the router level catches errors in any route
     errorElement: (
       <AppLayout>
         <ErrorBoundary />
       </AppLayout>
     ),
     children: [
-      // Public routes
       { path: ROUTES.HOME,   element: <Landing /> },
       { path: ROUTES.LOGIN,  element: <Login />   },
       { path: ROUTES.SIGNUP, element: <Signup />  },
 
-      // Restaurant routes
+      {
+        path: ROUTES.COMPLETE_PROFILE,
+        element: (
+          <CompleteProfileRoute>
+            <CompleteProfile />
+          </CompleteProfileRoute>
+        ),
+      },
+
       {
         path: ROUTES.RESTAURANT_DASHBOARD,
         element: (
@@ -111,7 +109,7 @@ const router = createBrowserRouter([
         ),
       },
 
-      // NGO routes
+      // NGO routes — UNCHANGED
       {
         path: ROUTES.NGO_DASHBOARD,
         element: (

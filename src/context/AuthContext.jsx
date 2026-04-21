@@ -7,50 +7,51 @@ import { COLLECTIONS } from '../utils/constants';
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser]   = useState(null);
+  const [userProfile, setUserProfile]   = useState(null);
+  const [loading, setLoading]           = useState(true);
 
   useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-    if (firebaseUser) {
-      try {
-        const userDocRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
-        const userSnap = await getDoc(userDocRef);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const userDocRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
+          const userSnap   = await getDoc(userDocRef);
 
-        if (userSnap.exists()) {
-          const data = userSnap.data();
-          setUserProfile(data);
+          if (userSnap.exists()) {
+            setUserProfile(userSnap.data());
+          } else {
+            setUserProfile(null);
+          }
           setCurrentUser(firebaseUser);
-        } else {
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
           setCurrentUser(firebaseUser);
           setUserProfile(null);
         }
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
-        setCurrentUser(firebaseUser);
+      } else {
+        setCurrentUser(null);
         setUserProfile(null);
       }
-    } else {
-      setCurrentUser(null);
-      setUserProfile(null);
-    }
-    setLoading(false);
-  });
+      setLoading(false);
+    });
 
-  return () => unsubscribe();
-}, []);
+    return () => unsubscribe();
+  }, []);
+
+  const needsProfile = Boolean(currentUser && !userProfile);
 
   const value = {
-    currentUser,   
-    userProfile,   
-    role: userProfile?.role ?? null, 
-    loading,       
+    currentUser,
+    userProfile,
+    role:         userProfile?.role ?? null,
+    loading,
+    needsProfile,  
     refreshProfile: async () => {
       if (!currentUser) return;
       try {
         const userDocRef = doc(db, COLLECTIONS.USERS, currentUser.uid);
-        const userSnap = await getDoc(userDocRef);
+        const userSnap   = await getDoc(userDocRef);
         if (userSnap.exists()) setUserProfile(userSnap.data());
       } catch (error) {
         console.error('Error refreshing profile:', error);
@@ -62,7 +63,6 @@ export const AuthProvider = ({ children }) => {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          {/* Inline spinner here to avoid circular import with Spinner component */}
           <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-slate-500 text-sm font-medium">Loading FoodBridge...</p>
         </div>

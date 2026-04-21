@@ -60,6 +60,7 @@ export const ROUTES = {
   LOGIN: '/login',
   SIGNUP: '/signup',
   NOT_FOUND: '*',
+  COMPLETE_PROFILE: '/complete-profile',
 
   // Restaurant routes
   RESTAURANT_DASHBOARD: '/restaurant/dashboard',
